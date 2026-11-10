@@ -8,8 +8,6 @@ DETAIL_COLUMNS = ["customer_id", "order_date", "amount", "status"]
 CONFLICT_REASON = "conflicting_details"
 
 
-
-
 def flag_conflicts(orders: DataFrame) -> DataFrame:
     """Add is_conflict = True when an order_id appears with different details."""
     versions = F.collect_set(F.struct(*DETAIL_COLUMNS)).over(Window.partitionBy("order_id"))
