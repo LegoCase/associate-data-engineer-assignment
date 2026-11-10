@@ -1,7 +1,13 @@
 from datetime import date
 from decimal import Decimal
 
-from order_pipeline.transforms import clean_orders, daily_revenue, flag_conflicts, prepare_orders
+from order_pipeline.transforms import (
+    clean_and_flag_orders,
+    clean_orders,
+    daily_revenue,
+    flag_conflicts,
+    prepare_orders,
+)
 
 COLUMNS = ["order_id", "customer_id", "order_date", "amount", "status"]
 
@@ -44,20 +50,20 @@ RAW_ORDERS = [
 
 def test_report_has_expected_columns(spark):
     raw = spark.createDataFrame(RAW_ORDERS, COLUMNS)
-    result = daily_revenue(prepare_orders(raw))
+    result = daily_revenue(prepare_orders(clean_and_flag_orders(raw)))
     assert set(result.columns) == {"order_date", "revenue", "order_count"}
 
 
 # Add tests that capture business rules and edge cases.
 def test_prepare_orders_keeps_only_valid_orders(spark):
     raw = spark.createDataFrame(RAW_ORDERS, COLUMNS)
-    result = prepare_orders(raw)
+    result = prepare_orders(clean_and_flag_orders(raw))
     assert sorted(row.order_id for row in result.collect()) == ["1", "2", "3", "4", "5"]
 
 
 def test_daily_revenue_from_mock_orders(spark):
     raw = spark.createDataFrame(RAW_ORDERS, COLUMNS)
-    result = daily_revenue(prepare_orders(raw))
+    result = daily_revenue(prepare_orders(clean_and_flag_orders(raw)))
     assert [tuple(row) for row in result.collect()] == [
         (date(2026, 10, 1), Decimal("145.50"), 4),  # orders 1, 2, 3, 5: 10 + 20.50 + 30 + 85
         (date(2026, 10, 2), Decimal("40.00"), 1),  # order 4, duplicate counted once
@@ -66,7 +72,7 @@ def test_daily_revenue_from_mock_orders(spark):
 
 def test_prepare_orders_excludes_every_version_of_a_conflicting_order(spark):
     raw = spark.createDataFrame(RAW_ORDERS, COLUMNS)
-    result_ids = {row.order_id for row in prepare_orders(raw).collect()}
+    result_ids = {row.order_id for row in prepare_orders(clean_and_flag_orders(raw)).collect()}
     assert "22" not in result_ids
     assert "23" not in result_ids
 
