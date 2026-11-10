@@ -3,9 +3,26 @@ from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import DecimalType
 
+AMOUNT_TYPE = DecimalType(18, 2)
 COMPLETED = "completed"
 DETAIL_COLUMNS = ["customer_id", "order_date", "amount", "status"]
 CONFLICT_REASON = "conflicting_details"
+AMOUNT_PATTERN = r"^-?\d+(\.\d{1,2})?$"
+DATE_PATTERN = r"^\d{4}-\d{2}-\d{2}$"
+
+
+def clean_orders(orders: DataFrame) -> DataFrame:
+    """Trim text, lowercase status, and safely parse date and amount."""
+    amount = F.trim("amount")
+    order_date = F.trim("order_date")
+    return (
+        orders
+        .withColumn("order_id", F.trim("order_id"))
+        .withColumn("customer_id", F.trim("customer_id"))
+        .withColumn("status", F.lower(F.trim("status")))
+        .withColumn("amount", F.when(amount.rlike(AMOUNT_PATTERN), amount.try_cast(AMOUNT_TYPE)))
+        .withColumn("order_date", F.when(order_date.rlike(DATE_PATTERN), order_date.try_cast("date")))
+    )
 
 
 def flag_conflicts(orders: DataFrame) -> DataFrame:
@@ -17,12 +34,7 @@ def flag_conflicts(orders: DataFrame) -> DataFrame:
 def prepare_orders(orders: DataFrame) -> DataFrame:
     """Prepare raw orders for reporting."""
     return (
-        orders
-        .withColumn("amount",(F.col("amount").try_cast(DecimalType(18, 2))))
-        .withColumn("order_date",(F.col("order_date").try_cast("DATE")))
-        .withColumn("order_id", F.trim("order_id"))
-        .withColumn("customer_id", F.trim("customer_id"))
-        .withColumn("status", F.lower(F.trim("status")))
+        clean_orders(orders)
         .transform(flag_conflicts)
         .where(
             ~F.col("is_conflict")
