@@ -1,4 +1,5 @@
 """Order transformations. Review correctness and test coverage."""
+
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import DecimalType
@@ -16,8 +17,7 @@ def clean_orders(orders: DataFrame) -> DataFrame:
     amount = F.trim("amount")
     order_date = F.trim("order_date")
     return (
-        orders
-        .withColumn("order_id", F.trim("order_id"))
+        orders.withColumn("order_id", F.trim("order_id"))
         .withColumn("customer_id", F.trim("customer_id"))
         .withColumn("status", F.lower(F.trim("status")))
         .withColumn("amount", F.when(amount.rlike(AMOUNT_PATTERN), amount.try_cast(AMOUNT_TYPE)))
@@ -43,7 +43,7 @@ def prepare_orders(orders: DataFrame) -> DataFrame:
             & (F.length("customer_id") > 0)
             & (F.col("order_date").isNotNull())
             & (F.col("amount") > 0)
-            )
+        )
         .drop("is_conflict")
         .dropDuplicates(["order_id"])
     )

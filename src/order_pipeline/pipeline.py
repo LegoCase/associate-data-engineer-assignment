@@ -1,16 +1,15 @@
 """Run with: python -m order_pipeline.pipeline"""
+
 from pathlib import Path
+
 from pyspark.sql import SparkSession
-from order_pipeline.transforms import prepare_orders, daily_revenue
+
+from order_pipeline.transforms import daily_revenue, prepare_orders
 
 
 def main() -> None:
     root = Path(__file__).resolve().parents[2]
-    spark = (
-        SparkSession.builder.master("local[2]")
-        .appName("associate-order-assignment")
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.master("local[2]").appName("associate-order-assignment").getOrCreate()
     try:
         raw = spark.read.option("header", True).csv(str(root / "data" / "orders.csv"))
         result = daily_revenue(prepare_orders(raw))
