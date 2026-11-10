@@ -1,9 +1,20 @@
 """Order transformations. Review correctness and test coverage."""
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import DecimalType
 
 COMPLETED = "completed"
+DETAIL_COLUMNS = ["customer_id", "order_date", "amount", "status"]
+CONFLICT_REASON = "conflicting_details"
+
+
+
+
+def flag_conflicts(orders: DataFrame) -> DataFrame:
+    """Add is_conflict = True when an order_id appears with different details."""
+    versions = F.collect_set(F.struct(*DETAIL_COLUMNS)).over(Window.partitionBy("order_id"))
+    return orders.withColumn("is_conflict", F.size(versions) > 1)
+
 
 def prepare_orders(orders: DataFrame) -> DataFrame:
     """Prepare raw orders for reporting."""
@@ -14,13 +25,16 @@ def prepare_orders(orders: DataFrame) -> DataFrame:
         .withColumn("order_id", F.trim("order_id"))
         .withColumn("customer_id", F.trim("customer_id"))
         .withColumn("status", F.lower(F.trim("status")))
+        .transform(flag_conflicts)
         .where(
-            (F.col("status") == COMPLETED)
+            ~F.col("is_conflict")
+            & (F.col("status") == COMPLETED)
             & (F.length("order_id") > 0)
             & (F.length("customer_id") > 0)
             & (F.col("order_date").isNotNull())
             & (F.col("amount") > 0)
             )
+        .drop("is_conflict")
         .dropDuplicates()
     )
 
