@@ -35,17 +35,17 @@ def prepare_orders(orders: DataFrame) -> DataFrame:
     """Prepare raw orders for reporting."""
     return (
         clean_orders(orders)
+        .where(F.length("order_id") > 0)
         .transform(flag_conflicts)
         .where(
             ~F.col("is_conflict")
             & (F.col("status") == COMPLETED)
-            & (F.length("order_id") > 0)
             & (F.length("customer_id") > 0)
             & (F.col("order_date").isNotNull())
             & (F.col("amount") > 0)
             )
         .drop("is_conflict")
-        .dropDuplicates()
+        .dropDuplicates(["order_id"])
     )
 
 
