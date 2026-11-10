@@ -94,6 +94,7 @@ Each step runs separately, and any failure causes the workflow to fail. The GitH
 
 There are a few things I would consider improving further:
 
+- Spend more time on testing edge cases
 - Read the CSV using an explicit schema and validate the header against it.
 - Store the different layers as Delta tables, using append or `MERGE` per run and detecting conflicts across multiple runs rather than only within one input file.
 - Report rows without an `order_id` instead of simply excluding them.
