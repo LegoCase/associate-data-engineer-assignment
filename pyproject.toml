@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "order-pipeline-assignment"
+version = "0.1.0"
+requires-python = ">=3.14,<3.15"
+dependencies = ["pyspark==4.2.0"]
+
+[dependency-groups]
+dev = ["pytest>=8,<9"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/order_pipeline"]

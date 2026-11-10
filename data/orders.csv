@@ -1,0 +1,12 @@
+order_id,customer_id,order_date,amount,status
+1001,C01,2026-10-01,120.50,completed
+1002,C02,2026-10-01,85.00,completed
+1002,C02,2026-10-01,85.00,completed
+1003,C03,2026-10-02,-45.00,completed
+1004,,2026-10-02,150.00,completed
+1005,C04,not-a-date,99.00,pending
+1006,C05,2026-10-02,75.00,cancelled
+1007,C06,2026-10-02,40.00,completed
+1008,C07,2026-10-02,not-a-number,completed
+1009,C08,2026-10-03,200.00,completed
+1009,C08,2026-10-03,220.00,completed
